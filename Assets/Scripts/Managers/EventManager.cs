@@ -22,7 +22,8 @@ public enum UIEvent {
     SUGGEST_BLOCK,
     ACHIEVE_BLOCK,
     UPDATE_GAME_STATE,
-    WIN_GAME
+    WIN_GAME,
+    SWAP_BLOCK
 }
 
 public class EventManager : Singleton<EventManager> {

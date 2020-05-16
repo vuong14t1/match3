@@ -97,12 +97,11 @@ public class Model : MonoBehaviour
 
     public void DeleteMatchBlock(List<GameObject> allMatchBlock)
     {
-        Debug.Log("delete map");
         foreach (var obj in allMatchBlock)
         {
             obj.GetComponent<Block>().AnimateDestroy(0.2f);
         }
-        Controller.Instance.mEvenManager.Fire(UIEvent.ACHIEVE_BLOCK, allMatchBlock.Count);
+        EventManager.Instance.Fire(UIEvent.ACHIEVE_BLOCK, allMatchBlock.Count);
         GameObject[,] tempAllBlocks = new GameObject[columnMaxMatrix, rowMaxMatrix];
         int countI = 0;
         int countJ = 0;
@@ -154,8 +153,6 @@ public class Model : MonoBehaviour
 
     public void SwapBlock(GameObject obj, Vector2 direction, bool isOnlySwap)
     {
-        Debug.Log("obj " + obj.GetComponent<Block>().posTarget);
-        Debug.Log("Direction " + direction);
         Block block1 = obj.GetComponent<Block>();
         GameObject obj2 = allBlocks[(int)(block1.posTarget.x + direction.x), (int)(block1.posTarget.y + direction.y)];
         Block block2 = obj2.GetComponent<Block>();
@@ -171,6 +168,10 @@ public class Model : MonoBehaviour
         
         block1.MovePosTarget();
         block2.MovePosTarget();
+        if (!isOnlySwap)
+        {
+            EventManager.Instance.Fire(UIEvent.SWAP_BLOCK, 1);
+        }
         if (isOnlySwap) return;
         StartCoroutine(CheckAfterSwap(obj, direction));
     }
@@ -185,7 +186,6 @@ public class Model : MonoBehaviour
         }
         else
         {
-            Debug.Log("swap again");
             SwapBlock(obj, direction * -1, true);
         }
     }

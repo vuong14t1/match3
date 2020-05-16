@@ -27,7 +27,7 @@ public class GameManager : Singleton<GameManager>
         if (score >= Controller.Instance.model.thresholdTarget)
         {
             isEndGame = true;
-            Controller.Instance.mEvenManager.Fire(UIEvent.WIN_GAME);
+            EventManager.Instance.Fire(UIEvent.WIN_GAME);
         }
     }
 
@@ -51,6 +51,22 @@ public class GameManager : Singleton<GameManager>
         
     }
 
+    public void DecreaseMoves(int moves)
+    {
+        if (modeGame != ModeGame.Moves)
+        {
+            Debug.Log("wrong mode game "+ modeGame);
+        } 
+        countThreshold -= moves;
+        EventManager.Instance.Fire(UIEvent.UPDATE_GAME_STATE, countThreshold);
+        if (countThreshold <= 0)
+        {
+            isOverGame = true;
+            EventManager.Instance.Fire(UIEvent.GAME_OVER);
+        }
+    }
+        
+
     private void Update()
     {
         if (modeGame == ModeGame.Timer && !isOverGame)
@@ -59,14 +75,14 @@ public class GameManager : Singleton<GameManager>
             if (elapse >= 1)
             {
                 countThreshold -= 1;
-                Controller.Instance.mEvenManager.Fire(UIEvent.UPDATE_GAME_STATE, countThreshold);
+                EventManager.Instance.Fire(UIEvent.UPDATE_GAME_STATE, countThreshold);
                 elapse = 0;
             }
 
             if (countThreshold <= 0)
             {
                 isOverGame = true;
-                Controller.Instance.mEvenManager.Fire(UIEvent.GAME_OVER);
+                EventManager.Instance.Fire(UIEvent.GAME_OVER);
             }
         }
     }
@@ -76,7 +92,17 @@ public class GameManager : Singleton<GameManager>
         countThreshold = Controller.Instance.model.thresholdCondition;
         isOverGame = false;
         isEndGame = false;
-        Controller.Instance.mEvenManager.Fire(UIEvent.UPDATE_GAME_STATE, countThreshold);
+        EventManager.Instance.Fire(UIEvent.UPDATE_GAME_STATE, countThreshold);
+    }
+
+    public int GetHighScore()
+    {
+        if (score > highScore)
+        {
+            highScore = score;
+        }
+
+        return highScore;
     }
     
     

@@ -21,23 +21,28 @@ public class Controller : Singleton<Controller>
     {
         view = FindObjectOfType<View>();
         model = FindObjectOfType<Model>();
-        mEvenManager.Fire(UIEvent.ENTER_PLAY_STATE);
+        EventManager.Instance.Fire(UIEvent.ENTER_PLAY_STATE);
     }
 
     public void RegisterListener()
     {
-        mEvenManager = EventManager.Instance;
-        mEvenManager.Listen(UIEvent.ENTER_PLAY_STATE, StartGame);
-        mEvenManager.Listen(UIEvent.GET_SCORE_INFO, UpdateScore); 
-        mEvenManager.Listen(UIEvent.ACHIEVE_BLOCK, OnAchieveMatchBlock);
-        mEvenManager.Listen(UIEvent.GAME_OVER, GameOver);
-        mEvenManager.Listen(UIEvent.UPDATE_GAME_STATE, UpdateGameState);
-        mEvenManager.Listen(UIEvent.WIN_GAME, WinGame);
+        EventManager.Instance.Listen(UIEvent.ENTER_PLAY_STATE, StartGame);
+        EventManager.Instance.Listen(UIEvent.GET_SCORE_INFO, UpdateScore); 
+        EventManager.Instance.Listen(UIEvent.ACHIEVE_BLOCK, OnAchieveMatchBlock);
+        EventManager.Instance.Listen(UIEvent.GAME_OVER, GameOver);
+        EventManager.Instance.Listen(UIEvent.UPDATE_GAME_STATE, UpdateGameState);
+        EventManager.Instance.Listen(UIEvent.WIN_GAME, WinGame);
+        EventManager.Instance.Listen(UIEvent.SWAP_BLOCK, SwapBlock);
+    }
+
+    private void SwapBlock(object obj)
+    {
+        GameManager.Instance.DecreaseMoves((int)obj);
     }
 
     private void WinGame(object obj)
     {
-        Debug.Log("Win game");
+        view.ShowGUIEndGame();
     }
 
     private void UpdateGameState(object obj)
@@ -47,7 +52,8 @@ public class Controller : Singleton<Controller>
 
     private void GameOver(object obj)
     {
-        Debug.Log("Game over");        
+        Debug.Log("Game over");
+        view.ShowGUIGameOver();
     }
 
     private void UpdateScore(object obj)
@@ -58,11 +64,11 @@ public class Controller : Singleton<Controller>
     public void OnAchieveMatchBlock(object o)
     {
         GameManager.Instance.CreaseAndUpdateScore((int)o);
-        mEvenManager.Fire(UIEvent.GET_SCORE_INFO);
+        EventManager.Instance.Fire(UIEvent.GET_SCORE_INFO);
     }
 
     // Update is called once per frame
-    void Update()
+    void Update()    
     {
         
     }
@@ -70,7 +76,7 @@ public class Controller : Singleton<Controller>
     public void StartGame(object o)
     {
         RefreshGame();
-        mEvenManager.Fire(UIEvent.GET_SCORE_INFO);
+        EventManager.Instance.Fire(UIEvent.GET_SCORE_INFO);
         model.SpawnStartGame();
     }
 
@@ -79,5 +85,6 @@ public class Controller : Singleton<Controller>
         model.RefreshGame();
         GameManager.Instance.RefreshGame();
         view.UpdateTarget(model.thresholdTarget);
+        view.UpdateTitleModeGame(GameManager.Instance.modeGame);
     }
 }
