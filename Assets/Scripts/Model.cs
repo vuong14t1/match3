@@ -273,6 +273,22 @@ public class Model : MonoBehaviour
                 }
             }
         }
+
+        UpdateThresholdTarget();
     }
-    
+
+    public void UpdateThresholdTarget()
+    {
+        int level = GameManager.Instance.level;
+        LevelConfig levelConfig = GameConfig.Instance.GetLevelConfig(level);
+        thresholdTarget = levelConfig.target;
+        thresholdCondition = levelConfig.thresholdC;
+        if (levelConfig.modeGame == "Timer")
+        {
+            GameManager.Instance.modeGame = ModeGame.Timer;
+        }else if (levelConfig.modeGame == "Moves")
+        {
+            GameManager.Instance.modeGame = ModeGame.Moves;
+        }
+    }
 }

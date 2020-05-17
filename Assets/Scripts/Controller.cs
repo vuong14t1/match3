@@ -33,6 +33,7 @@ public class Controller : Singleton<Controller>
         EventManager.Instance.Listen(UIEvent.UPDATE_GAME_STATE, UpdateGameState);
         EventManager.Instance.Listen(UIEvent.WIN_GAME, WinGame);
         EventManager.Instance.Listen(UIEvent.SWAP_BLOCK, SwapBlock);
+        EventManager.Instance.Listen(UIEvent.NEXT_LEVEL, NextLevel);
     }
 
     private void SwapBlock(object obj)
@@ -86,5 +87,11 @@ public class Controller : Singleton<Controller>
         GameManager.Instance.RefreshGame();
         view.UpdateTarget(model.thresholdTarget);
         view.UpdateTitleModeGame(GameManager.Instance.modeGame);
+    }
+
+    public void NextLevel(object o)
+    {
+        GameManager.Instance.NextLevel();
+        EventManager.Instance.Fire(UIEvent.ENTER_PLAY_STATE);
     }
 }

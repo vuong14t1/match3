@@ -48,6 +48,8 @@ public class GUIEndGame : BasePanel
         btnNextLevel.onClick.AddListener(() =>
         {
             Debug.Log("vao day next level");
+            EventManager.Instance.Fire(UIEvent.NEXT_LEVEL);
+            UIManager.Instance.SetClose(this);
         });
     }
 

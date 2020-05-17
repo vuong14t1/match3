@@ -28,7 +28,7 @@ public class GameManager : Singleton<GameManager>
     public ModeGame modeGame;
     public float elapse = 0;
     public StateGame stateGame = StateGame.Idle;
-
+    public int level = 1;
     public void CreaseAndUpdateScore(int numberOf)
     {
         score += Controller.Instance.model.valueOfBlock * numberOf;
@@ -125,6 +125,11 @@ public class GameManager : Singleton<GameManager>
     public StateGame GetStateGame()
     {
         return this.stateGame;
+    }
+
+    public void NextLevel()
+    {
+        level++;
     }
     
     
