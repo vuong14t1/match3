@@ -26,16 +26,35 @@ public class Model : MonoBehaviour
         
     }
 
-    public GameObject SpawnBlock(int i, int j)
+    public bool isValidMapByPosition(Vector2 pos)
     {
-        Transform containBlocks = GameManager.Instance.containBlocks;
-        int idx = Random.Range(0, prefabBlock.Length);
-        GameObject obj = Instantiate(prefabBlock[idx]);
-        obj.transform.parent = containBlocks;
-        obj.name = "[" + i + "," + j + "]";
-        Block block = obj.GetComponent<Block>();
-        block.setPositionTarget(new Vector2(i, j));
-        obj.transform.position = new Vector2(i, posYSpawn + j);
+        return pos.x >= 0 && pos.x < columnMaxMatrix && pos.y >= 0 && pos.y < rowMaxMatrix;
+    }
+
+    public GameObject SpawnBlock(int i, int j, bool isCheckMatch = false)
+    {
+        int iterator = 0;
+        int maxIterator = 10;
+        GameObject obj = null;
+        while (iterator < maxIterator)
+        {
+            Transform containBlocks = GameManager.Instance.containBlocks;
+            int idx = Random.Range(0, prefabBlock.Length);
+            obj = Instantiate(prefabBlock[idx]);
+            obj.transform.parent = containBlocks;
+            obj.name = "[" + i + "," + j + "]";
+            Block block = obj.GetComponent<Block>();
+            block.setPositionTarget(new Vector2(i, j));
+            obj.transform.position = new Vector2(i, posYSpawn + j);
+            allBlocks[i, j] = obj;
+            if (GetAchieveBlock().Count <= 0 || !isCheckMatch || iterator < maxIterator)
+            {
+                break;
+            }
+            Destroy(obj);
+            iterator++;
+        }
+        
         return obj;
     }
 
@@ -45,7 +64,7 @@ public class Model : MonoBehaviour
         {
             for (int j = 0; j < rowMaxMatrix; j++)
             {
-                allBlocks[i, j] = SpawnBlock(i, j);
+                allBlocks[i, j] = SpawnBlock(i, j, true);
                 allBlocks[i, j].GetComponent<Block>().MovePosTarget();
             }
         }
@@ -77,6 +96,10 @@ public class Model : MonoBehaviour
         {
             DeleteMatchBlock(allMatchBlock);    
         }
+        else
+        {
+            GameManager.Instance.SetStateGame(StateGame.Idle);
+        }
         
     }
 
@@ -87,8 +110,12 @@ public class Model : MonoBehaviour
         {
             for (int j = 0; j < rowMaxMatrix; j++)
             {
-                List<GameObject> blocks = allBlocks[i, j].GetComponent<Block>().GetMatchBlocks();
-                allMatchBlock = allMatchBlock.Union(blocks).ToList();
+                if (allBlocks[i, j] != null)
+                {
+                    List<GameObject> blocks = allBlocks[i, j].GetComponent<Block>().GetMatchBlocks();
+                    allMatchBlock = allMatchBlock.Union(blocks).ToList();    
+                }
+                
             }
         }
 
@@ -168,11 +195,8 @@ public class Model : MonoBehaviour
         
         block1.MovePosTarget();
         block2.MovePosTarget();
-        if (!isOnlySwap)
-        {
-            EventManager.Instance.Fire(UIEvent.SWAP_BLOCK, 1);
-        }
         if (isOnlySwap) return;
+        EventManager.Instance.Fire(UIEvent.SWAP_BLOCK, 1);
         StartCoroutine(CheckAfterSwap(obj, direction));
     }
 
@@ -187,6 +211,8 @@ public class Model : MonoBehaviour
         else
         {
             SwapBlock(obj, direction * -1, true);
+            yield return new WaitForSeconds(0.4f);
+            GameManager.Instance.SetStateGame(StateGame.Idle);
         }
     }
 

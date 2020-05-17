@@ -416,7 +416,7 @@ MonoBehaviour:
   rowMaxMatrix: 12
   posYSpawn: 14
   valueOfBlock: 1
-  thresholdCondition: 5
+  thresholdCondition: 60
   thresholdTarget: 300
 --- !u!1 &368774179
 GameObject:
@@ -1266,8 +1266,9 @@ MonoBehaviour:
   countThreshold: 0
   isOverGame: 0
   isEndGame: 0
-  modeGame: 0
+  modeGame: 1
   elapse: 0
+  stateGame: 0
 --- !u!114 &1278921279
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -36,8 +36,10 @@ public class Block : MonoBehaviour
         //check horizontal
         
         if (Mathf.RoundToInt(posTarget.y) + 1 < rowMatrix
-            && allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y) + 1].CompareTag(transform.tag) 
             && Mathf.RoundToInt(posTarget.y) - 1 >= 0
+            && allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y) + 1] != null
+            && allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y) - 1] != null
+            && allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y) + 1].CompareTag(transform.tag)
             && allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y) - 1].CompareTag(transform.tag))
         {
             matchB.Add(allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y) + 1]);
@@ -45,8 +47,10 @@ public class Block : MonoBehaviour
             matchB.Add(allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y)]);
             
         }else if (Mathf.RoundToInt(posTarget.x) + 1 < columnMatrix 
-                  && allBlocks[Mathf.RoundToInt(posTarget.x) + 1, Mathf.RoundToInt(posTarget.y)].CompareTag(transform.tag)
                   && Mathf.RoundToInt(posTarget.x) - 1 >= 0
+                  && allBlocks[Mathf.RoundToInt(posTarget.x) + 1, Mathf.RoundToInt(posTarget.y)] != null
+                  && allBlocks[Mathf.RoundToInt(posTarget.x) - 1, Mathf.RoundToInt(posTarget.y)] != null
+                  && allBlocks[Mathf.RoundToInt(posTarget.x) + 1, Mathf.RoundToInt(posTarget.y)].CompareTag(transform.tag)
                   && allBlocks[Mathf.RoundToInt(posTarget.x) - 1, Mathf.RoundToInt(posTarget.y)].CompareTag(transform.tag))
         {
             matchB.Add(allBlocks[Mathf.RoundToInt(posTarget.x) - 1, Mathf.RoundToInt(posTarget.y)]);
@@ -85,6 +89,11 @@ public class Block : MonoBehaviour
 
     public void CheckAndHandleInput(Vector3 beginPos, Vector3 endPos)
     {
+        if (GameManager.Instance.GetStateGame() == StateGame.Moving)
+        {
+            Debug.Log("State game is moving");
+            return;
+        }
         float distance = Vector3.Distance(beginPos, endPos);
         if (distance > maxDistanceMove)
         {
@@ -92,7 +101,18 @@ public class Block : MonoBehaviour
             direction = new Vector2(Mathf.RoundToInt(direction.x), Mathf.RoundToInt(direction.y));
             if (direction.x != direction.y)
             {
-                Controller.Instance.model.SwapBlock(gameObject, direction, false);
+                //kiem tra move block co ra ngoai map hay khong
+                if (Controller.Instance.model.isValidMapByPosition(new Vector2(posTarget.x + direction.x,
+                    posTarget.y + direction.y)))
+                {
+                    Controller.Instance.model.SwapBlock(gameObject, direction, false);
+                    GameManager.Instance.SetStateGame(StateGame.Moving);    
+                }
+                else
+                {
+                    Debug.Log("Move bound map");        
+                }
+                
             }
             else
                 Debug.Log("distance too long");{

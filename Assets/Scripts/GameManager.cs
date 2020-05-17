@@ -9,6 +9,13 @@ public enum ModeGame
     Moves
 }
 
+public enum StateGame
+{
+    Idle,
+    Moving,
+    EndGame
+}
+
 public class GameManager : Singleton<GameManager>
 {
     public Transform containBlocks;
@@ -20,6 +27,7 @@ public class GameManager : Singleton<GameManager>
     public bool isEndGame = false;
     public ModeGame modeGame;
     public float elapse = 0;
+    public StateGame stateGame = StateGame.Idle;
 
     public void CreaseAndUpdateScore(int numberOf)
     {
@@ -28,6 +36,7 @@ public class GameManager : Singleton<GameManager>
         {
             isEndGame = true;
             EventManager.Instance.Fire(UIEvent.WIN_GAME);
+            SetStateGame(StateGame.EndGame);
         }
     }
 
@@ -63,6 +72,7 @@ public class GameManager : Singleton<GameManager>
         {
             isOverGame = true;
             EventManager.Instance.Fire(UIEvent.GAME_OVER);
+            SetStateGame(StateGame.EndGame);
         }
     }
         
@@ -83,6 +93,7 @@ public class GameManager : Singleton<GameManager>
             {
                 isOverGame = true;
                 EventManager.Instance.Fire(UIEvent.GAME_OVER);
+                SetStateGame(StateGame.EndGame);
             }
         }
     }
@@ -93,6 +104,7 @@ public class GameManager : Singleton<GameManager>
         isOverGame = false;
         isEndGame = false;
         EventManager.Instance.Fire(UIEvent.UPDATE_GAME_STATE, countThreshold);
+        SetStateGame(StateGame.Idle);
     }
 
     public int GetHighScore()
@@ -103,6 +115,16 @@ public class GameManager : Singleton<GameManager>
         }
 
         return highScore;
+    }
+
+    public void SetStateGame(StateGame stateGame)
+    {
+        this.stateGame = stateGame;
+    }
+
+    public StateGame GetStateGame()
+    {
+        return this.stateGame;
     }
     
     
