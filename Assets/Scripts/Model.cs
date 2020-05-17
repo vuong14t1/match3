@@ -34,7 +34,7 @@ public class Model : MonoBehaviour
     public GameObject SpawnBlock(int i, int j, bool isCheckMatch = false)
     {
         int iterator = 0;
-        int maxIterator = 10;
+        int maxIterator = 2;
         GameObject obj = null;
         while (iterator < maxIterator)
         {
@@ -46,8 +46,7 @@ public class Model : MonoBehaviour
             Block block = obj.GetComponent<Block>();
             block.setPositionTarget(new Vector2(i, j));
             obj.transform.position = new Vector2(i, posYSpawn + j);
-            allBlocks[i, j] = obj;
-            if (GetAchieveBlock().Count <= 0 || !isCheckMatch || iterator < maxIterator)
+            if (!isCheckMatch || !IsAchieveAround(i, j, obj) || iterator >= maxIterator)
             {
                 break;
             }
@@ -57,6 +56,46 @@ public class Model : MonoBehaviour
         
         return obj;
     }
+
+    public bool IsAchieveAround(int i, int j, GameObject obj)
+    {
+        List<GameObject> achieves = new List<GameObject>();
+        
+        for (int r = -2; r <= 0; r++)
+        {
+            if (j + r < rowMaxMatrix
+                && j + r >= 0
+                && allBlocks[i, j + r] != null
+                && allBlocks[i, j + r].CompareTag(obj.tag)
+                )
+            {
+                achieves.Add(allBlocks[i, j + r]);
+            }
+        }
+
+        if (achieves.Count >= 2)
+        {
+            return true;
+        }
+        achieves.Clear();
+        for (int r = -2; r <= 0; r++)
+        {
+            if (i + r < rowMaxMatrix
+                && i + r >= 0
+                && allBlocks[i + r, j] != null
+                && allBlocks[i  + r, j].CompareTag(obj.tag)
+            )
+            {
+                achieves.Add(allBlocks[i + r, j]);
+            }
+        }
+        if (achieves.Count >= 2)
+        {
+            return true;
+        }
+        return false;
+    }
+    
 
     public void SpawnStartGame()
     {
