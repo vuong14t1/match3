@@ -52,5 +52,6 @@ using UnityEngine;
      UPDATE_GAME_STATE,
      WIN_GAME,
      SWAP_BLOCK,
-     NEXT_LEVEL
+     NEXT_LEVEL,
+     RELOAD_GAME
  }

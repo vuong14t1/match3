@@ -29,6 +29,7 @@ public class GameManager : Singleton<GameManager>
     public float elapse = 0;
     public StateGame stateGame = StateGame.Idle;
     public int level = 1;
+    public bool isSaveLocal = false;
     public void CreaseAndUpdateScore(int numberOf)
     {
         score += Controller.Instance.model.valueOfBlock * numberOf;
@@ -103,6 +104,7 @@ public class GameManager : Singleton<GameManager>
         countThreshold = Controller.Instance.model.thresholdCondition;
         isOverGame = false;
         isEndGame = false;
+        score = 0;
         EventManager.Instance.Fire(UIEvent.UPDATE_GAME_STATE, countThreshold);
         SetStateGame(StateGame.Idle);
     }
@@ -131,6 +133,14 @@ public class GameManager : Singleton<GameManager>
     {
         level++;
     }
-    
+
+    public void DeSerialize(DataLocal dataLocal)
+    {
+        score = dataLocal.score;
+        highScore = dataLocal.highScore;
+        stateGame = dataLocal.stateGame;
+        countThreshold = dataLocal.countThreshold;
+        level = dataLocal.level;
+    }
     
 }

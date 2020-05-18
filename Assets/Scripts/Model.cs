@@ -34,9 +34,9 @@ public class Model : MonoBehaviour
     public GameObject SpawnBlock(int i, int j, bool isCheckMatch = false)
     {
         int iterator = 0;
-        int maxIterator = 2;
+        int maxIterator = 5;
         GameObject obj = null;
-        while (iterator < maxIterator)
+        while (true)
         {
             Transform containBlocks = GameManager.Instance.containBlocks;
             int idx = Random.Range(0, prefabBlock.Length);
@@ -48,12 +48,34 @@ public class Model : MonoBehaviour
             obj.transform.position = new Vector2(i, posYSpawn + j);
             if (!isCheckMatch || !IsAchieveAround(i, j, obj) || iterator >= maxIterator)
             {
-                break;
+                return obj;
             }
             Destroy(obj);
             iterator++;
         }
         
+        return obj;
+    }
+
+    public GameObject SpawnBlockByTag(int i, int j, string tag)
+    {
+        GameObject obj = null;
+        Transform containBlocks = GameManager.Instance.containBlocks;
+        int idx = Random.Range(0, prefabBlock.Length);
+        for (int k = 0; k < prefabBlock.Length; k++)
+        {
+            if (prefabBlock[k].tag == tag)
+            {
+                idx = k;
+                break;
+            }
+        }
+        obj = Instantiate(prefabBlock[idx]);
+        obj.transform.parent = containBlocks;
+        obj.name = "[" + i + "," + j + "]";
+        Block block = obj.GetComponent<Block>();
+        block.setPositionTarget(new Vector2(i, j));
+        obj.transform.position = new Vector2(i, posYSpawn + j);
         return obj;
     }
 
@@ -109,6 +131,24 @@ public class Model : MonoBehaviour
         }
 
         CheckAndDestroyMatchBlock(0.7f);
+    }
+
+    public bool SpawnBlocksFromCached(DataLocal dataLocal)
+    {
+        if (dataLocal.stateGame != StateGame.EndGame)
+        {
+            for (int i = 0; i < columnMaxMatrix; i++)
+            {
+                for (int j = 0; j < rowMaxMatrix; j++)
+                {
+                    allBlocks[i, j] = SpawnBlockByTag(i, j, dataLocal.allBlock[i, j]);
+                    allBlocks[i, j].GetComponent<Block>().MovePosTarget();
+                }
+            }
+            return true;
+        }
+
+        return false;
     }
 
     public void CheckAndDestroyMatchBlock(float delay = 1f)

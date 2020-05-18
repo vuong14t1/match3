@@ -13,7 +13,6 @@ public class Controller : Singleton<Controller>
     protected override void Awake()
     {
         base.Awake();
-        RegisterListener();
     }
 
     // Start is called before the first frame update
@@ -21,7 +20,8 @@ public class Controller : Singleton<Controller>
     {
         view = FindObjectOfType<View>();
         model = FindObjectOfType<Model>();
-        EventManager.Instance.Fire(UIEvent.ENTER_PLAY_STATE);
+        RegisterListener();
+        EventManager.Instance.Fire(UIEvent.RELOAD_GAME);
     }
 
     public void RegisterListener()
@@ -34,6 +34,7 @@ public class Controller : Singleton<Controller>
         EventManager.Instance.Listen(UIEvent.WIN_GAME, WinGame);
         EventManager.Instance.Listen(UIEvent.SWAP_BLOCK, SwapBlock);
         EventManager.Instance.Listen(UIEvent.NEXT_LEVEL, NextLevel);
+        EventManager.Instance.Listen(UIEvent.RELOAD_GAME, ReloadGame);
     }
 
     private void SwapBlock(object obj)
@@ -94,4 +95,30 @@ public class Controller : Singleton<Controller>
         GameManager.Instance.NextLevel();
         EventManager.Instance.Fire(UIEvent.ENTER_PLAY_STATE);
     }
+
+    public void SaveGame()
+    {
+        Local.LocalManager.SaveGame();
+    }
+
+    public void ReloadGame(object o)
+    {
+        DataLocal dataLocal = Local.LocalManager.LoadGame();
+        if (dataLocal != null && dataLocal.stateGame != StateGame.EndGame && GameManager.Instance.isSaveLocal)
+        {
+            GameManager.Instance.DeSerialize(dataLocal);
+            model.UpdateThresholdTarget();
+            model.SpawnBlocksFromCached(dataLocal);
+            view.UpdateTarget(model.thresholdTarget);
+            view.UpdateTitleModeGame(GameManager.Instance.modeGame);
+            EventManager.Instance.Fire(UIEvent.UPDATE_GAME_STATE, GameManager.Instance.countThreshold);
+            EventManager.Instance.Fire(UIEvent.GET_SCORE_INFO);    
+        }
+        else
+        {
+            EventManager.Instance.Fire(UIEvent.ENTER_PLAY_STATE);
+        }
+        
+    }
+
 }
