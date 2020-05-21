@@ -4,6 +4,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 
+public enum KindOfBlock
+{
+    Normal,
+    Blank,
+    BombVertical,
+    BombHorizontal,
+    BombSquare
+}
 public class Block : MonoBehaviour
 {
     public Vector2 posTarget;
@@ -11,7 +19,49 @@ public class Block : MonoBehaviour
     private Vector2 beginPos;
     private Vector2 endPos;
     private float maxDistanceMove = 1;
+    public KindOfBlock kindOfBlock;
 
+    public Block()
+    {
+        kindOfBlock = KindOfBlock.Normal;
+    }
+
+    public void UpdateKindOfBlock(KindOfBlock kindOfBlock)
+    {
+        if (this.kindOfBlock != KindOfBlock.Normal && this.kindOfBlock != KindOfBlock.Blank)
+        {
+            if (this.kindOfBlock == KindOfBlock.BombHorizontal || this.kindOfBlock == KindOfBlock.BombVertical)
+            {
+                this.kindOfBlock = KindOfBlock.BombSquare;
+            }
+            else
+            {
+                this.kindOfBlock = kindOfBlock;
+            }
+        }
+        else
+        {
+            this.kindOfBlock = kindOfBlock;
+        }
+
+        UpdateSpriteByKindOfBlock();
+    }
+
+    public void UpdateSpriteByKindOfBlock()
+    {
+        switch (this.kindOfBlock)
+        {
+            case KindOfBlock.BombHorizontal:
+                GetComponent<SpriteRenderer>().sprite = Controller.Instance.model.spriteBombHorizontal;
+                break;
+            case KindOfBlock.BombVertical:
+                GetComponent<SpriteRenderer>().sprite = Controller.Instance.model.spriteBombVertical;
+                break;
+            case KindOfBlock.BombSquare:
+                GetComponent<SpriteRenderer>().sprite = Controller.Instance.model.spriteBombSquare;
+                break;
+        }
+    }
     public void setPositionTarget(Vector2 vec)
     {
         posTarget = vec;

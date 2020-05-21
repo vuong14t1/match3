@@ -14,6 +14,10 @@ public class Model : MonoBehaviour
     public int thresholdCondition;
     public int thresholdTarget;
     public GameObject[,] allBlocks;
+
+    public Sprite spriteBombVertical;
+    public Sprite spriteBombHorizontal;
+    public Sprite spriteBombSquare;
     // Start is called before the first frame update
     void Start()
     {
@@ -200,12 +204,71 @@ public class Model : MonoBehaviour
 
         return allMatchBlock;
     }
+    
+    
+
+    public void CheckAndUpdateKindOfBlock(GameObject obj)
+    {
+        string targetTag = obj.tag;
+        Block target = obj.GetComponent<Block>();
+        var maxVertical = 2;
+        var maxHorizontal = 2;
+        int countMatchVertical = 0;
+        int countMatchHorizontal = 0;
+        List<GameObject> matchBlocks = new List<GameObject>();
+        Debug.Log("check match target obj " + target.posTarget);
+        for (int v = -maxVertical; v <= maxVertical; v++)
+        {
+            if (target.posTarget.y + v >= 0
+                && target.posTarget.y + v < rowMaxMatrix &&
+                allBlocks[(int) target.posTarget.x, (int) target.posTarget.y + v].tag == targetTag)
+            {
+                countMatchVertical++;
+                Block ele = allBlocks[(int) target.posTarget.x, (int) target.posTarget.y + v].GetComponent<Block>();
+                Debug.Log("check element v " + v + "|" + ele.posTarget + " | " + ele.tag);
+                matchBlocks.Add(allBlocks[(int) target.posTarget.x, (int) target.posTarget.y + v]);
+            }
+            else
+            {
+                if (target.posTarget.y + v >= target.posTarget.y - 1 &&
+                    target.posTarget.y + v <= target.posTarget.y + 1)
+                {
+                    break;
+                }
+            }
+        }
+            
+        for (int h = -maxHorizontal; h <= maxHorizontal; h++)
+        {
+            if (target.posTarget.x + h >= 0
+                && target.posTarget.x + h < columnMaxMatrix &&
+                allBlocks[(int) target.posTarget.x + h, (int) target.posTarget.y].tag == targetTag)
+            {
+                countMatchHorizontal++;
+                Block ele = allBlocks[(int) target.posTarget.x + h, (int) target.posTarget.y].GetComponent<Block>();
+                Debug.Log("check element h " + h + " | " + ele.posTarget + " | " + ele.tag);
+            }else
+            {
+                if (target.posTarget.x + h >= target.posTarget.x - 1 &&
+                    target.posTarget.x + h <= target.posTarget.x + 1)
+                {
+                    break;
+                }
+            }
+        }
+
+        if (countMatchVertical > 3) target.UpdateKindOfBlock(KindOfBlock.BombVertical);
+        if (countMatchHorizontal > 3) target.UpdateKindOfBlock(KindOfBlock.BombHorizontal);
+    }
 
     public void DeleteMatchBlock(List<GameObject> allMatchBlock)
     {
         foreach (var obj in allMatchBlock)
         {
-            obj.GetComponent<Block>().AnimateDestroy(0.2f);
+            if (obj.GetComponent<Block>().kindOfBlock == KindOfBlock.Normal)
+            {
+                obj.GetComponent<Block>().AnimateDestroy(0.2f);    
+            }
         }
         EventManager.Instance.Fire(UIEvent.ACHIEVE_BLOCK, allMatchBlock.Count);
         GameObject[,] tempAllBlocks = new GameObject[columnMaxMatrix, rowMaxMatrix];
@@ -276,13 +339,23 @@ public class Model : MonoBehaviour
         block2.MovePosTarget();
         if (isOnlySwap) return;
         EventManager.Instance.Fire(UIEvent.SWAP_BLOCK, 1);
-        StartCoroutine(CheckAfterSwap(obj, direction));
+        StartCoroutine(CheckAfterSwap(obj, direction, obj2));
     }
 
-    public IEnumerator CheckAfterSwap(GameObject obj, Vector2 direction)
+    public IEnumerator CheckAfterSwap(GameObject obj, Vector2 direction, GameObject otherObj)
     {
         yield return new WaitForSeconds(0.5f);
-        List<GameObject> allMatchBlocks = GetAchieveBlock(); 
+        List<GameObject> allMatchBlocks = GetAchieveBlock();
+        if (allMatchBlocks.Contains(obj))
+        {
+            CheckAndUpdateKindOfBlock(obj);
+            Debug.Log("check kind of target");
+        }
+        else
+        {
+            Debug.Log("check kind of other");
+            CheckAndUpdateKindOfBlock(otherObj);
+        }
         if (allMatchBlocks.Count > 0)
         {
             DeleteMatchBlock(allMatchBlocks);

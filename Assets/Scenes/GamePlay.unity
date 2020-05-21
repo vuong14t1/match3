@@ -551,6 +551,12 @@ MonoBehaviour:
   valueOfBlock: 1
   thresholdCondition: 60
   thresholdTarget: 300
+  spriteBombVertical: {fileID: 460015164092950415, guid: 3b6bfd353b5d7db4eaa8dffa48f7fa63,
+    type: 3}
+  spriteBombHorizontal: {fileID: 4036653128823905756, guid: 3b6bfd353b5d7db4eaa8dffa48f7fa63,
+    type: 3}
+  spriteBombSquare: {fileID: -7884835228973622835, guid: 3b6bfd353b5d7db4eaa8dffa48f7fa63,
+    type: 3}
 --- !u!1 &368774179
 GameObject:
   m_ObjectHideFlags: 0
@@ -1619,6 +1625,7 @@ MonoBehaviour:
   elapse: 0
   stateGame: 0
   level: 1
+  isSaveLocal: 0
 --- !u!114 &1278921279
 MonoBehaviour:
   m_ObjectHideFlags: 0
