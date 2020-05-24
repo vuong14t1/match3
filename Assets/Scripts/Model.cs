@@ -177,6 +177,7 @@ public class Model : MonoBehaviour
         List<GameObject> allMatchBlock = GetAchieveBlock();
         if (allMatchBlock.Count > 0)
         {
+            CheckAndUpdateKindOfBlock(allMatchBlock);
             DeleteMatchBlock(allMatchBlock);    
         }
         else
@@ -184,6 +185,18 @@ public class Model : MonoBehaviour
             GameManager.Instance.SetStateGame(StateGame.Idle);
         }
         
+    }
+
+    public void CheckAndUpdateKindOfBlock(List<GameObject> objs)
+    {
+        for (int i = 0; i < objs.Count; i++)
+        {
+            Block obj = objs[i].GetComponent<Block>();
+            if (obj.oldPosTarget != obj.posTarget)
+            {
+                CheckAndUpdateKindOfBlock(objs[i]);
+            }
+        }        
     }
 
     public List<GameObject> GetAchieveBlock()
@@ -217,55 +230,64 @@ public class Model : MonoBehaviour
         int countMatchHorizontal = 0;
         List<GameObject> matchBlocks = new List<GameObject>();
         Debug.Log("check match target obj " + target.posTarget);
+        bool isPreMatch = false;
         for (int v = -maxVertical; v <= maxVertical; v++)
         {
             if (target.posTarget.y + v >= 0
                 && target.posTarget.y + v < rowMaxMatrix &&
-                allBlocks[(int) target.posTarget.x, (int) target.posTarget.y + v].tag == targetTag)
+                allBlocks[(int) target.posTarget.x, (int) target.posTarget.y + v].tag == targetTag
+                && allBlocks[(int) target.posTarget.x, (int) target.posTarget.y + v].GetComponent<Block>().kindOfBlock == KindOfBlock.Normal)
             {
                 countMatchVertical++;
                 Block ele = allBlocks[(int) target.posTarget.x, (int) target.posTarget.y + v].GetComponent<Block>();
                 Debug.Log("check element v " + v + "|" + ele.posTarget + " | " + ele.tag);
                 matchBlocks.Add(allBlocks[(int) target.posTarget.x, (int) target.posTarget.y + v]);
+                isPreMatch = true;
             }
             else
             {
-                if (target.posTarget.y + v >= target.posTarget.y - 1 &&
-                    target.posTarget.y + v <= target.posTarget.y + 1)
+                if (isPreMatch)
                 {
                     break;
                 }
+                
             }
         }
-            
+        isPreMatch = false;
         for (int h = -maxHorizontal; h <= maxHorizontal; h++)
         {
             if (target.posTarget.x + h >= 0
                 && target.posTarget.x + h < columnMaxMatrix &&
-                allBlocks[(int) target.posTarget.x + h, (int) target.posTarget.y].tag == targetTag)
+                allBlocks[(int) target.posTarget.x + h, (int) target.posTarget.y].tag == targetTag
+                && allBlocks[(int) target.posTarget.x + h, (int) target.posTarget.y].GetComponent<Block>().kindOfBlock == KindOfBlock.Normal)
             {
                 countMatchHorizontal++;
                 Block ele = allBlocks[(int) target.posTarget.x + h, (int) target.posTarget.y].GetComponent<Block>();
                 Debug.Log("check element h " + h + " | " + ele.posTarget + " | " + ele.tag);
+                isPreMatch = true;
             }else
             {
-                if (target.posTarget.x + h >= target.posTarget.x - 1 &&
-                    target.posTarget.x + h <= target.posTarget.x + 1)
+                if (isPreMatch)
                 {
                     break;
                 }
+
             }
         }
 
         if (countMatchVertical > 3) target.UpdateKindOfBlock(KindOfBlock.BombVertical);
         if (countMatchHorizontal > 3) target.UpdateKindOfBlock(KindOfBlock.BombHorizontal);
+        if (countMatchHorizontal >= 3 && countMatchVertical >= 3)
+        {
+            target.UpdateKindOfBlock(KindOfBlock.BombSquare);
+        }
     }
 
     public void DeleteMatchBlock(List<GameObject> allMatchBlock)
     {
         foreach (var obj in allMatchBlock)
         {
-            if (obj.GetComponent<Block>().kindOfBlock == KindOfBlock.Normal)
+            if (obj.GetComponent<Block>().kindOfBlock == KindOfBlock.Normal || obj.GetComponent<Block>().kindOfBlock == KindOfBlock.Destroy)
             {
                 obj.GetComponent<Block>().AnimateDestroy(0.2f);    
             }

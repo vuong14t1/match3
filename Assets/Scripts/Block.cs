@@ -6,6 +6,7 @@ using DG.Tweening;
 
 public enum KindOfBlock
 {
+    Destroy,
     Normal,
     Blank,
     BombVertical,
@@ -20,15 +21,20 @@ public class Block : MonoBehaviour
     private Vector2 endPos;
     private float maxDistanceMove = 1;
     public KindOfBlock kindOfBlock;
+    public Vector2 oldPosTarget;
 
-    public Block()
+    private void Awake()
     {
         kindOfBlock = KindOfBlock.Normal;
     }
 
     public void UpdateKindOfBlock(KindOfBlock kindOfBlock)
     {
-        if (this.kindOfBlock != KindOfBlock.Normal && this.kindOfBlock != KindOfBlock.Blank)
+        /*if (kindOfBlock == KindOfBlock.Destroy)
+        {
+            Debug.Log("============== destroy kind of");
+        }
+        if (this.kindOfBlock != KindOfBlock.Normal && this.kindOfBlock != KindOfBlock.Blank && this.kindOfBlock != KindOfBlock.Destroy)
         {
             if (this.kindOfBlock == KindOfBlock.BombHorizontal || this.kindOfBlock == KindOfBlock.BombVertical)
             {
@@ -41,9 +47,9 @@ public class Block : MonoBehaviour
         }
         else
         {
-            this.kindOfBlock = kindOfBlock;
-        }
-
+            
+        }*/
+        this.kindOfBlock = kindOfBlock;
         UpdateSpriteByKindOfBlock();
     }
 
@@ -64,7 +70,16 @@ public class Block : MonoBehaviour
     }
     public void setPositionTarget(Vector2 vec)
     {
+        if (posTarget != null)
+        {
+            SetOldPositionTarget(new Vector2(posTarget.x, posTarget.y));    
+        }
         posTarget = vec;
+    }
+
+    public void SetOldPositionTarget(Vector2 vec)
+    {
+        this.oldPosTarget = vec;
     }
 
     public void MovePosTarget()
@@ -72,7 +87,7 @@ public class Block : MonoBehaviour
         if (!isPause)
         {
             transform.DOMove(new Vector3(posTarget.x, posTarget.y,transform.position.z), Vector2.Distance(transform.position, posTarget) / GameManager.Instance.speedMove)
-                .SetEase(Ease.OutBack, 0.8f);
+                .SetEase(Ease.OutBack, 0.2f);
             
         }
     }
@@ -92,10 +107,10 @@ public class Block : MonoBehaviour
             && allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y) + 1].CompareTag(transform.tag)
             && allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y) - 1].CompareTag(transform.tag))
         {
-            matchB.Add(allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y) + 1]);
-            matchB.Add(allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y) - 1]);
-            matchB.Add(allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y)]);
-            
+            matchB.AddRange(GetMatchByKindOfBlock(allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y) + 1]));
+            matchB.AddRange(GetMatchByKindOfBlock(allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y) - 1]));
+            matchB.AddRange(GetMatchByKindOfBlock(allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y)]));
+
         }else if (Mathf.RoundToInt(posTarget.x) + 1 < columnMatrix 
                   && Mathf.RoundToInt(posTarget.x) - 1 >= 0
                   && allBlocks[Mathf.RoundToInt(posTarget.x) + 1, Mathf.RoundToInt(posTarget.y)] != null
@@ -103,13 +118,120 @@ public class Block : MonoBehaviour
                   && allBlocks[Mathf.RoundToInt(posTarget.x) + 1, Mathf.RoundToInt(posTarget.y)].CompareTag(transform.tag)
                   && allBlocks[Mathf.RoundToInt(posTarget.x) - 1, Mathf.RoundToInt(posTarget.y)].CompareTag(transform.tag))
         {
-            matchB.Add(allBlocks[Mathf.RoundToInt(posTarget.x) - 1, Mathf.RoundToInt(posTarget.y)]);
-            matchB.Add(allBlocks[Mathf.RoundToInt(posTarget.x) + 1, Mathf.RoundToInt(posTarget.y)]);
-            matchB.Add(allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y)]);
+            matchB.AddRange(GetMatchByKindOfBlock(allBlocks[Mathf.RoundToInt(posTarget.x) - 1, Mathf.RoundToInt(posTarget.y)]));
+            matchB.AddRange(GetMatchByKindOfBlock(allBlocks[Mathf.RoundToInt(posTarget.x) + 1, Mathf.RoundToInt(posTarget.y)]));
+            matchB.AddRange(GetMatchByKindOfBlock(allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y)]));
         }
         return matchB;
     }
 
+    public List<GameObject> GetMatchByKindOfBlock(GameObject obj)
+    {
+        Debug.Log("GetMatchByKindOfBlock " + obj.GetComponent<Block>().kindOfBlock);
+        List<GameObject> objs = new List<GameObject>();
+        switch (obj.GetComponent<Block>().kindOfBlock)
+        {
+            case KindOfBlock.BombHorizontal:
+                return obj.GetComponent<Block>().GetMatchBlockHorizontal();
+            case KindOfBlock.BombVertical:
+                return obj.GetComponent<Block>().GetMatchBlockVertical();
+            case KindOfBlock.BombSquare:
+                return obj.GetComponent<Block>().GetMatchBlockSquare();
+        }
+        objs.Add(obj);
+        return objs;
+    }
+
+    public List<GameObject> GetMatchBlockHorizontal()
+    {
+        Debug.Log("GetMatchBlockHorizontal");
+        UpdateKindOfBlock(KindOfBlock.Destroy);
+        List<GameObject> matchs = new List<GameObject>();
+        for (int i = 0; i < Controller.Instance.model.columnMaxMatrix; i++)
+        {
+            if (!Controller.Instance.model.isValidMapByPosition(new Vector2(i, (int) posTarget.y)))
+            {
+                continue;
+            }
+            Block b = Controller.Instance.model.allBlocks[i, (int) posTarget.y].GetComponent<Block>(); 
+            if (b.kindOfBlock == KindOfBlock.BombVertical)
+            {
+                matchs.AddRange(b.GetMatchBlockVertical());
+            } else if (b.kindOfBlock == KindOfBlock.BombSquare) 
+            {
+                matchs.AddRange(b.GetMatchBlockSquare());
+            }
+            else
+            {
+                matchs.Add(Controller.Instance.model.allBlocks[i, (int) posTarget.y]);   
+            }
+            b.UpdateKindOfBlock(KindOfBlock.Destroy);
+        }
+
+        return matchs;
+    }
+    public List<GameObject> GetMatchBlockVertical()
+    {
+        Debug.Log("GetMatchBlockVertical");
+        UpdateKindOfBlock(KindOfBlock.Destroy);
+        List<GameObject> matchs = new List<GameObject>();
+        for (int i = 0; i < Controller.Instance.model.rowMaxMatrix; i++)
+        {
+            if (!Controller.Instance.model.isValidMapByPosition(new Vector2((int) posTarget.x, i)))
+            {
+                continue;
+            }
+            Block b = Controller.Instance.model.allBlocks[(int) posTarget.x, i].GetComponent<Block>(); 
+            if (b.kindOfBlock == KindOfBlock.BombHorizontal)
+            {
+                matchs.AddRange(b.GetMatchBlockHorizontal());
+                
+            }else if (b.kindOfBlock == KindOfBlock.BombSquare)
+            {
+                matchs.AddRange(b.GetMatchBlockSquare());
+            }
+            else
+            {
+                matchs.Add(Controller.Instance.model.allBlocks[(int) posTarget.x, i]);   
+            }
+            b.UpdateKindOfBlock(KindOfBlock.Destroy);
+        }
+
+        return matchs;
+    }
+    
+    public List<GameObject> GetMatchBlockSquare()
+    {
+        Debug.Log("GetMatchBlockSquare");
+        UpdateKindOfBlock(KindOfBlock.Destroy);
+        List<GameObject> matchs = new List<GameObject>();
+        var maxIterator = 1;
+        for (int i = -maxIterator; i <= maxIterator; i++)
+        {
+            for (int j = -maxIterator; j <= maxIterator; j++)
+            {
+                if (!Controller.Instance.model.isValidMapByPosition(new Vector2((int) posTarget.x + i,
+                    (int) posTarget.y + j)))
+                {
+                    continue;
+                }
+                Block b = Controller.Instance.model.allBlocks[(int ) posTarget.x + i, (int) posTarget.y + j].GetComponent<Block>(); 
+                if (b.kindOfBlock == KindOfBlock.BombVertical)
+                {
+                    matchs.AddRange(b.GetMatchBlockVertical());
+                } else if (b.kindOfBlock == KindOfBlock.BombHorizontal)
+                {
+                    matchs.AddRange(b.GetMatchBlockHorizontal());
+                }
+                else
+                {
+                    matchs.Add(Controller.Instance.model.allBlocks[(int ) posTarget.x + i, (int) posTarget.y + j]);   
+                }
+                b.UpdateKindOfBlock(KindOfBlock.Destroy);
+            }    
+        }
+        return matchs;
+    }
     public void AnimateDestroy(float delay = 0)
     {
         Sequence mySequence = DOTween.Sequence();
