@@ -6,9 +6,9 @@ using DG.Tweening;
 
 public enum KindOfBlock
 {
-    Destroy,
     Normal,
     Blank,
+    Destroy,
     BombVertical,
     BombHorizontal,
     BombSquare
@@ -66,6 +66,11 @@ public class Block : MonoBehaviour
             case KindOfBlock.BombSquare:
                 GetComponent<SpriteRenderer>().sprite = Controller.Instance.model.spriteBombSquare;
                 break;
+            case KindOfBlock.Blank:
+                GetComponent<SpriteRenderer>().sprite = Controller.Instance.model.spriteBlank;
+                GetComponent<SpriteRenderer>().color = Color.blue;
+                tag = TagBlock.Blank;
+                break;
         }
     }
     public void setPositionTarget(Vector2 vec)
@@ -92,6 +97,10 @@ public class Block : MonoBehaviour
         }
     }
 
+    public bool CanAchieve(GameObject obj)
+    {
+        return obj.GetComponent<Block>().kindOfBlock != KindOfBlock.Blank;
+    }
     public List<GameObject> GetMatchBlocks()
     {
         GameObject[,] allBlocks = Controller.Instance.model.allBlocks;
@@ -99,7 +108,6 @@ public class Block : MonoBehaviour
         int columnMatrix = Controller.Instance.model.columnMaxMatrix;
         int rowMatrix = Controller.Instance.model.rowMaxMatrix;
         //check horizontal
-        
         if (Mathf.RoundToInt(posTarget.y) + 1 < rowMatrix
             && Mathf.RoundToInt(posTarget.y) - 1 >= 0
             && allBlocks[Mathf.RoundToInt(posTarget.x), Mathf.RoundToInt(posTarget.y) + 1] != null
@@ -125,18 +133,19 @@ public class Block : MonoBehaviour
         return matchB;
     }
 
-    public List<GameObject> GetMatchByKindOfBlock(GameObject obj)
+    public static List<GameObject> GetMatchByKindOfBlock(GameObject obj)
     {
         Debug.Log("GetMatchByKindOfBlock " + obj.GetComponent<Block>().kindOfBlock);
         List<GameObject> objs = new List<GameObject>();
-        switch (obj.GetComponent<Block>().kindOfBlock)
+        Block bObj = obj.GetComponent<Block>(); 
+        switch (bObj.kindOfBlock)
         {
             case KindOfBlock.BombHorizontal:
-                return obj.GetComponent<Block>().GetMatchBlockHorizontal();
+                return bObj.GetMatchBlockHorizontal();
             case KindOfBlock.BombVertical:
-                return obj.GetComponent<Block>().GetMatchBlockVertical();
+                return bObj.GetMatchBlockVertical();
             case KindOfBlock.BombSquare:
-                return obj.GetComponent<Block>().GetMatchBlockSquare();
+                return bObj.GetMatchBlockSquare();
         }
         objs.Add(obj);
         return objs;
@@ -145,11 +154,10 @@ public class Block : MonoBehaviour
     public List<GameObject> GetMatchBlockHorizontal()
     {
         Debug.Log("GetMatchBlockHorizontal");
-        UpdateKindOfBlock(KindOfBlock.Destroy);
         List<GameObject> matchs = new List<GameObject>();
         for (int i = 0; i < Controller.Instance.model.columnMaxMatrix; i++)
         {
-            if (!Controller.Instance.model.isValidMapByPosition(new Vector2(i, (int) posTarget.y)))
+            if (!Controller.Instance.model.isValidMapByPosition(new Vector2(i, (int) posTarget.y)) || !CanAchieve(Controller.Instance.model.allBlocks[i, (int) posTarget.y]))
             {
                 continue;
             }
@@ -173,11 +181,10 @@ public class Block : MonoBehaviour
     public List<GameObject> GetMatchBlockVertical()
     {
         Debug.Log("GetMatchBlockVertical");
-        UpdateKindOfBlock(KindOfBlock.Destroy);
         List<GameObject> matchs = new List<GameObject>();
         for (int i = 0; i < Controller.Instance.model.rowMaxMatrix; i++)
         {
-            if (!Controller.Instance.model.isValidMapByPosition(new Vector2((int) posTarget.x, i)))
+            if (!Controller.Instance.model.isValidMapByPosition(new Vector2((int) posTarget.x, i))|| !CanAchieve(Controller.Instance.model.allBlocks[(int) posTarget.x, i]))
             {
                 continue;
             }
@@ -203,7 +210,6 @@ public class Block : MonoBehaviour
     public List<GameObject> GetMatchBlockSquare()
     {
         Debug.Log("GetMatchBlockSquare");
-        UpdateKindOfBlock(KindOfBlock.Destroy);
         List<GameObject> matchs = new List<GameObject>();
         var maxIterator = 1;
         for (int i = -maxIterator; i <= maxIterator; i++)
@@ -211,7 +217,7 @@ public class Block : MonoBehaviour
             for (int j = -maxIterator; j <= maxIterator; j++)
             {
                 if (!Controller.Instance.model.isValidMapByPosition(new Vector2((int) posTarget.x + i,
-                    (int) posTarget.y + j)))
+                    (int) posTarget.y + j)) || !CanAchieve(Controller.Instance.model.allBlocks[(int ) posTarget.x + i, (int) posTarget.y + j]))
                 {
                     continue;
                 }
@@ -273,6 +279,11 @@ public class Block : MonoBehaviour
             direction = new Vector2(Mathf.RoundToInt(direction.x), Mathf.RoundToInt(direction.y));
             if (direction.x != direction.y)
             {
+                if (!Controller.Instance.model.CanSwapBlock(gameObject) || !Controller.Instance.model.CanSwapBlock(Controller.Instance.model.allBlocks[(int)(posTarget.x + direction.x), (int)(posTarget.y + direction.y)]))
+                {
+                    Debug.Log("Khong the di chuyen blank");
+                    return;
+                }
                 //kiem tra move block co ra ngoai map hay khong
                 if (Controller.Instance.model.isValidMapByPosition(new Vector2(posTarget.x + direction.x,
                     posTarget.y + direction.y)))

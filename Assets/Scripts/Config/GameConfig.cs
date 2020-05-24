@@ -1,17 +1,27 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Config.Maps;
 using UnityEngine;
+
+public class TagBlock
+{
+    public static string Blank = "Blank";
+}
 
 public class GameConfig : Singleton<GameConfig>
 {
     public TextAsset levelConfigs;
     public LevelConfigs LevelConfigs;
+    //
+    public TextAsset assetMapConfigs;
+    public MapConfigs mapConfigs;
 
     private void Awake()
     {
         base.Awake();    
         loadLevelConfig();
+        LoadMapConfigs();
     }
 
     public void loadLevelConfig()
@@ -30,5 +40,10 @@ public class GameConfig : Singleton<GameConfig>
         }
 
         return null;
+    }
+
+    public void LoadMapConfigs()
+    {
+        mapConfigs = JsonUtility.FromJson<MapConfigs>(assetMapConfigs.text);
     }
 }

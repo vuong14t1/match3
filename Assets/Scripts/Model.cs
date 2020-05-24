@@ -18,6 +18,8 @@ public class Model : MonoBehaviour
     public Sprite spriteBombVertical;
     public Sprite spriteBombHorizontal;
     public Sprite spriteBombSquare;
+
+    public Sprite spriteBlank;
     // Start is called before the first frame update
     void Start()
     {
@@ -33,6 +35,11 @@ public class Model : MonoBehaviour
     public bool isValidMapByPosition(Vector2 pos)
     {
         return pos.x >= 0 && pos.x < columnMaxMatrix && pos.y >= 0 && pos.y < rowMaxMatrix;
+    }
+
+    public bool CanSwapBlock(GameObject obj)
+    {
+        return obj.GetComponent<Block>().kindOfBlock != KindOfBlock.Blank;
     }
 
     public GameObject SpawnBlock(int i, int j, bool isCheckMatch = false)
@@ -130,11 +137,26 @@ public class Model : MonoBehaviour
             for (int j = 0; j < rowMaxMatrix; j++)
             {
                 allBlocks[i, j] = SpawnBlock(i, j, true);
+                UpdateKindOfBlockFromConfig(allBlocks[i, j], i, j);
                 allBlocks[i, j].GetComponent<Block>().MovePosTarget();
             }
         }
 
         CheckAndDestroyMatchBlock(0.7f);
+    }
+
+    public void UpdateKindOfBlockFromConfig(GameObject obj, int i, int j)
+    {
+        int kind = GameConfig.Instance.mapConfigs.GetKindOfBlock(GameManager.Instance.level, i, j);
+        switch (kind)
+        {
+            case 1:
+                obj.GetComponent<Block>().UpdateKindOfBlock(KindOfBlock.Blank);
+                break;
+            case 0:
+                obj.GetComponent<Block>().UpdateKindOfBlock(KindOfBlock.Normal);
+                break;
+        }
     }
 
     public bool SpawnBlocksFromCached(DataLocal dataLocal)
@@ -206,7 +228,7 @@ public class Model : MonoBehaviour
         {
             for (int j = 0; j < rowMaxMatrix; j++)
             {
-                if (allBlocks[i, j] != null)
+                if (allBlocks[i, j] != null && allBlocks[i, j].GetComponent<Block>().kindOfBlock != KindOfBlock.Blank)
                 {
                     List<GameObject> blocks = allBlocks[i, j].GetComponent<Block>().GetMatchBlocks();
                     allMatchBlock = allMatchBlock.Union(blocks).ToList();    
@@ -229,7 +251,7 @@ public class Model : MonoBehaviour
         int countMatchVertical = 0;
         int countMatchHorizontal = 0;
         List<GameObject> matchBlocks = new List<GameObject>();
-        Debug.Log("check match target obj " + target.posTarget);
+        //Debug.Log("check match target obj " + target.posTarget);
         bool isPreMatch = false;
         for (int v = -maxVertical; v <= maxVertical; v++)
         {
@@ -240,7 +262,7 @@ public class Model : MonoBehaviour
             {
                 countMatchVertical++;
                 Block ele = allBlocks[(int) target.posTarget.x, (int) target.posTarget.y + v].GetComponent<Block>();
-                Debug.Log("check element v " + v + "|" + ele.posTarget + " | " + ele.tag);
+                //Debug.Log("check element v " + v + "|" + ele.posTarget + " | " + ele.tag);
                 matchBlocks.Add(allBlocks[(int) target.posTarget.x, (int) target.posTarget.y + v]);
                 isPreMatch = true;
             }
@@ -263,7 +285,7 @@ public class Model : MonoBehaviour
             {
                 countMatchHorizontal++;
                 Block ele = allBlocks[(int) target.posTarget.x + h, (int) target.posTarget.y].GetComponent<Block>();
-                Debug.Log("check element h " + h + " | " + ele.posTarget + " | " + ele.tag);
+                //Debug.Log("check element h " + h + " | " + ele.posTarget + " | " + ele.tag);
                 isPreMatch = true;
             }else
             {
@@ -296,12 +318,30 @@ public class Model : MonoBehaviour
         GameObject[,] tempAllBlocks = new GameObject[columnMaxMatrix, rowMaxMatrix];
         int countI = 0;
         int countJ = 0;
+        //fill blank block
+        for (int i = 0; i < columnMaxMatrix; i++)
+        {
+            for (int j = 0; j < rowMaxMatrix; j++)
+            {
+                if(allBlocks[i, j] != null && allBlocks[i, j].GetComponent<Block>().kindOfBlock == KindOfBlock.Blank)
+                {
+                    tempAllBlocks[i, j] = allBlocks[i, j];
+                }
+                
+            }
+        }
         //Check down null
         for (int i = 0; i < columnMaxMatrix; i++)
         {
             for (int j = 0; j < rowMaxMatrix; j++)
             {
-                if (allBlocks[i, j] != null)
+                if (tempAllBlocks[countI, countJ] != null)
+                {
+                    countJ++;
+                    j--;
+                    continue;
+                }
+                if (allBlocks[i, j] != null && allBlocks[i, j].GetComponent<Block>().kindOfBlock != KindOfBlock.Blank && tempAllBlocks[countI, countJ] == null)
                 {
                     tempAllBlocks[countI, countJ ++] = allBlocks[i, j];
                 }
@@ -361,13 +401,49 @@ public class Model : MonoBehaviour
         block2.MovePosTarget();
         if (isOnlySwap) return;
         EventManager.Instance.Fire(UIEvent.SWAP_BLOCK, 1);
+        Debug.Log("pos swap " + block1.posTarget + "| direction " + direction * -1);
         StartCoroutine(CheckAfterSwap(obj, direction, obj2));
+    }
+
+    public bool IsSwapSpecialBlock(GameObject obj, Vector2 direction)
+    {
+        Block bObj1 = obj.GetComponent<Block>();
+        Block bObj2 = allBlocks[(int) (bObj1.posTarget.x + direction.x), (int) (bObj1.posTarget.y + direction.y)].GetComponent<Block>();
+        return IsSpecialBlock(bObj1) && IsSpecialBlock(bObj2);
+    }
+
+    public bool IsSpecialBlock(Block block)
+    {
+        return block.kindOfBlock == KindOfBlock.BombHorizontal || block.kindOfBlock == KindOfBlock.BombVertical ||
+               block.kindOfBlock == KindOfBlock.BombSquare;
     }
 
     public IEnumerator CheckAfterSwap(GameObject obj, Vector2 direction, GameObject otherObj)
     {
         yield return new WaitForSeconds(0.5f);
-        List<GameObject> allMatchBlocks = GetAchieveBlock();
+        List<GameObject> allMatchBlocks = new List<GameObject>();
+        if (IsSwapSpecialBlock(obj, direction * -1))
+        {
+            Debug.Log("special swap");
+            Block bObj1 = obj.GetComponent<Block>();
+            allMatchBlocks.Union(Block.GetMatchByKindOfBlock(obj));
+            allMatchBlocks.Union(Block.GetMatchByKindOfBlock(allBlocks[(int) (bObj1.posTarget.x + direction.x * -1), (int) (bObj1.posTarget.y + direction.y * -1)]));
+        }
+        else
+        {
+            allMatchBlocks = GetAchieveBlock();
+            if (allMatchBlocks.Contains(obj))
+            {
+                CheckAndUpdateKindOfBlock(obj);
+                Debug.Log("check kind of target");
+            }
+            else
+            {
+                Debug.Log("check kind of other");
+                CheckAndUpdateKindOfBlock(otherObj);
+            }    
+        }
+        /*allMatchBlocks = GetAchieveBlock();
         if (allMatchBlocks.Contains(obj))
         {
             CheckAndUpdateKindOfBlock(obj);
@@ -377,7 +453,8 @@ public class Model : MonoBehaviour
         {
             Debug.Log("check kind of other");
             CheckAndUpdateKindOfBlock(otherObj);
-        }
+        }*/
+        
         if (allMatchBlocks.Count > 0)
         {
             DeleteMatchBlock(allMatchBlocks);

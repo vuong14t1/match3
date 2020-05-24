@@ -97,6 +97,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   posTarget: {x: 0, y: 0}
   isPause: 0
+  kindOfBlock: 0
+  oldPosTarget: {x: 0, y: 0}
 --- !u!61 &5948922738359576445
 BoxCollider2D:
   m_ObjectHideFlags: 0
